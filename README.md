@@ -190,4 +190,4 @@ Navigating directly to `/login` or `/register` returned a 404 because Vercel tri
 - Rate limiting on auth endpoints to prevent brute force attacks.
 - Refresh token flow so users aren't logged out after JWT expiry.
 - End-to-end tests with Cypress covering the auth flow and task CRUD.
-- Change Favicon and Tab name to match the app.
+~~- Change Favicon and Tab name to match the app.~~ ✅
