@@ -183,10 +183,11 @@ Navigating directly to `/login` or `/register` returned a 404 because Vercel tri
 ## 💭 Future Improvements
 
 - **Mobile responsiveness** - the app is currently designed for desktop browsers only. A full responsive redesign using CSS media queries and a mobile-first layout would make it usable across all screen sizes and devices.
+- **Email verification** - send a confirmation code or magic link to the user's email on registration to verify they own the address before activating the account. Could be implemented using SMTP (e.g. Gmail, SendGrid, or Resend).
 - Add due dates to tasks with a date picker and overdue highlighting.
 - Edit task title and description inline without a modal.
 - Add task categories or tags for better organisation.
 - Rate limiting on auth endpoints to prevent brute force attacks.
 - Refresh token flow so users aren't logged out after JWT expiry.
 - End-to-end tests with Cypress covering the auth flow and task CRUD.
-- Change Favicon and Tab name to match the app
+- Change Favicon and Tab name to match the app.
