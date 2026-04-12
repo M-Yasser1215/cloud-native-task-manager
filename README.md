@@ -51,6 +51,11 @@ A full-stack task management app deployed to the cloud with a real backend, data
 - Modal form for creating new tasks
 - Sidebar navigation with per-filter counts
 
+**Responsive Design**
+ - Mobile-first layout with CSS media queries
+ - Slide-out sidebar with hamburger menu on mobile
+ - Fully usable across desktop, tablet, and mobile
+
 ---
 
 ## 🏗️ Architecture
@@ -62,11 +67,14 @@ cloud-native-task-manager/
 │   │   ├── pages/
 │   │   │   ├── Login.tsx
 │   │   │   ├── Register.tsx
-│   │   │   └── Dashboard.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   └── Verify.tsx
 │   │   ├── App.tsx         ← Routing
 │   │   ├── AuthContext.tsx ← Global auth state
 │   │   ├── api.ts          ← Axios client with JWT interceptors
 │   │   └── types.ts        ← TypeScript interfaces
+│   ├── public/
+│   │   └── favicon.svg     ← Custom SVG favicon
 │   └── vercel.json         ← Client-side routing fix
 │
 └── backend/                ← FastAPI (Python)
@@ -83,6 +91,7 @@ cloud-native-task-manager/
     ├── requirements.txt
     └── Procfile
 ```
+
 
 ---
 
@@ -118,6 +127,7 @@ JWT_SECRET=your-random-secret
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
 CORS_ORIGINS=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
 ```
 
 Frontend (`.env`):
@@ -141,11 +151,14 @@ VITE_API_URL=http://localhost:8000
 
 ## 👩🏽‍🍳 The Process
 
-I started by designing the database schema - a `users` table and a `tasks` table with a foreign key relationship. From there I built the FastAPI backend, wiring up SQLAlchemy models, Pydantic schemas for validation, and JWT auth from scratch using `python-jose` and `passlib`.
+I started by designing the database schema — a `users` table and a `tasks` table with a foreign key relationship. From there I built the FastAPI backend, wiring up SQLAlchemy models, Pydantic schemas for validation, and JWT auth from scratch using `python-jose` and `passlib`.
 
-Once the backend was running locally and tested via the auto-generated Swagger docs, I moved to the frontend. I scaffolded the React app with Vite and TypeScript, built the auth flow (register -> login -> protected dashboard), and set up an Axios client with request interceptors to attach the JWT token automatically.
+Once the backend was running locally and tested via the auto-generated Swagger docs, I moved to the frontend. I scaffolded the React app with Vite and TypeScript, built the auth flow (register → login → protected dashboard), and set up an Axios client with request interceptors to attach the JWT token automatically.
 
 With both ends talking to each other locally, I deployed the database to Neon, the backend to Render, and the frontend to Vercel. This involved configuring environment variables across three separate platforms and debugging CORS, routing, and Python version issues in production.
+
+After the core app was live, I added mobile responsiveness with a slide-out sidebar and CSS media query breakpoints, a custom SVG favicon and tab title, and a registration flow with an email verification page.
+
 
 ---
 
@@ -161,7 +174,7 @@ The `TaskUpdate` Pydantic schema had `completed: Optional[str]` instead of `Opti
 Using `from app import models` in the routers caused a circular import that silently broke the `Task` class at import time, resulting in an `AttributeError`. Fixed by switching to direct imports: `from app.models import User, Task`.
 
 **Node.js too old for Vite**
-`npm create vite@latest` failed with a `SyntaxError` about `styleText` not being exported from `node:util`. The installed Node.js version was v21.5.0 - below the required `>=22.12.0`. Fixed by upgrading Node.js to the latest LTS.
+`npm create vite@latest` failed with a `SyntaxError` about `styleText` not being exported from `node:util`. The installed Node.js version was v21.5.0 — below the required `>=22.12.0`. Fixed by upgrading Node.js to the latest LTS.
 
 **`.env` accidentally pushed to GitHub**
 The `.env` file containing the live Neon database credentials was committed and pushed. Fixed by immediately rotating the database password on Neon, removing `.env` from git tracking with `git rm --cached`, and adding it to `.gitignore`.
@@ -178,16 +191,24 @@ The frontend on Vercel was blocked by CORS because the `CORS_ORIGINS` environmen
 **Vercel returning 404 on all routes**
 Navigating directly to `/login` or `/register` returned a 404 because Vercel tried to find those as static files. Fixed by adding a `vercel.json` rewrite rule to serve `index.html` for all routes, letting React Router handle navigation client-side.
 
+**New database columns not picked up on deploy**
+After adding `verified` and `verification_token` columns to the `User` model, existing users had `NULL` values and new registrations failed. SQLAlchemy only creates tables from scratch — it doesn't migrate existing ones. Fixed by running `ALTER TABLE` statements manually in Neon's SQL Editor.
+
+**Render blocking outbound SMTP**
+After implementing email verification using Gmail SMTP, the registration endpoint hung indefinitely with no response. Render's free tier blocks outbound connections on both port 465 and 587. Attempted workaround with Resend (HTTPS-based) was limited by free tier restrictions. Resolved by removing live email sending and replacing it with a registration confirmation page that explains the limitation — email verification is documented as a future improvement.
+
+
 ---
 
 ## 💭 Future Improvements
 
-- ~~**Mobile responsiveness** - the app is currently designed for desktop browsers only. A full responsive redesign using CSS media queries and a mobile-first layout would make it usable across all screen sizes and devices.~~ ✅
-- **Email verification** - send a confirmation code or magic link to the user's email on registration to verify they own the address before activating the account. Could be implemented using SMTP (e.g. Gmail, SendGrid, or Resend).
+- **Mobile responsiveness** - the app is currently designed for desktop browsers only. A full responsive redesign using CSS media queries and a mobile-first layout would make it usable across all screen sizes and devices. ✅
+- **Email verification** - send a confirmation code or magic link to the user's email on registration to verify they own the address before activating the account. Could be implemented using SMTP (e.g. Gmail, SendGrid, or Resend). ❌ 
+> **Note:** Email verification was attempted during development. Gmail SMTP was blocked by Render's free tier, and Resend's free tier restricted sending to verified addresses only. The registration flow and verification page exist in the codebase - only the actual email delivery is missing. Fully implementable on a paid hosting plan or with a custom domain on Resend.
 - Add due dates to tasks with a date picker and overdue highlighting.
 - Edit task title and description inline without a modal.
 - Add task categories or tags for better organisation.
 - Rate limiting on auth endpoints to prevent brute force attacks.
 - Refresh token flow so users aren't logged out after JWT expiry.
 - End-to-end tests with Cypress covering the auth flow and task CRUD.
-- ~~Change Favicon and Tab name to match the app.~~ ✅
+- Change Favicon and Tab name to match the app. ✅
