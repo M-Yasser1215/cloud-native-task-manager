@@ -151,7 +151,7 @@ VITE_API_URL=http://localhost:8000
 
 ## 👩🏽‍🍳 The Process
 
-I started by designing the database schema — a `users` table and a `tasks` table with a foreign key relationship. From there I built the FastAPI backend, wiring up SQLAlchemy models, Pydantic schemas for validation, and JWT auth from scratch using `python-jose` and `passlib`.
+I started by designing the database schema - a `users` table and a `tasks` table with a foreign key relationship. From there I built the FastAPI backend, wiring up SQLAlchemy models, Pydantic schemas for validation, and JWT auth from scratch using `python-jose` and `passlib`.
 
 Once the backend was running locally and tested via the auto-generated Swagger docs, I moved to the frontend. I scaffolded the React app with Vite and TypeScript, built the auth flow (register → login → protected dashboard), and set up an Axios client with request interceptors to attach the JWT token automatically.
 
@@ -174,7 +174,7 @@ The `TaskUpdate` Pydantic schema had `completed: Optional[str]` instead of `Opti
 Using `from app import models` in the routers caused a circular import that silently broke the `Task` class at import time, resulting in an `AttributeError`. Fixed by switching to direct imports: `from app.models import User, Task`.
 
 **Node.js too old for Vite**
-`npm create vite@latest` failed with a `SyntaxError` about `styleText` not being exported from `node:util`. The installed Node.js version was v21.5.0 — below the required `>=22.12.0`. Fixed by upgrading Node.js to the latest LTS.
+`npm create vite@latest` failed with a `SyntaxError` about `styleText` not being exported from `node:util`. The installed Node.js version was v21.5.0 - below the required `>=22.12.0`. Fixed by upgrading Node.js to the latest LTS.
 
 **`.env` accidentally pushed to GitHub**
 The `.env` file containing the live Neon database credentials was committed and pushed. Fixed by immediately rotating the database password on Neon, removing `.env` from git tracking with `git rm --cached`, and adding it to `.gitignore`.
@@ -192,10 +192,10 @@ The frontend on Vercel was blocked by CORS because the `CORS_ORIGINS` environmen
 Navigating directly to `/login` or `/register` returned a 404 because Vercel tried to find those as static files. Fixed by adding a `vercel.json` rewrite rule to serve `index.html` for all routes, letting React Router handle navigation client-side.
 
 **New database columns not picked up on deploy**
-After adding `verified` and `verification_token` columns to the `User` model, existing users had `NULL` values and new registrations failed. SQLAlchemy only creates tables from scratch — it doesn't migrate existing ones. Fixed by running `ALTER TABLE` statements manually in Neon's SQL Editor.
+After adding `verified` and `verification_token` columns to the `User` model, existing users had `NULL` values and new registrations failed. SQLAlchemy only creates tables from scratch - it doesn't migrate existing ones. Fixed by running `ALTER TABLE` statements manually in Neon's SQL Editor.
 
 **Render blocking outbound SMTP**
-After implementing email verification using Gmail SMTP, the registration endpoint hung indefinitely with no response. Render's free tier blocks outbound connections on both port 465 and 587. Attempted workaround with Resend (HTTPS-based) was limited by free tier restrictions. Resolved by removing live email sending and replacing it with a registration confirmation page that explains the limitation — email verification is documented as a future improvement.
+After implementing email verification using Gmail SMTP, the registration endpoint hung indefinitely with no response. Render's free tier blocks outbound connections on both port 465 and 587. Attempted workaround with Resend (HTTPS-based) was limited by free tier restrictions. Resolved by removing live email sending and replacing it with a registration confirmation page that explains the limitation - email verification is documented as a future improvement.
 
 
 ---
