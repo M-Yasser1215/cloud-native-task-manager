@@ -81,7 +81,7 @@ export default function Dashboard() {
     <div className="dashboard">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-logo">✦ Taskr</div>
+        <div className="sidebar-logo">◈ Taskr</div>
         <nav className="sidebar-nav">
           <button className={filter === "all" ? "nav-item active" : "nav-item"} onClick={() => setFilter("all")}>
             <span className="nav-icon">▦</span> All tasks
