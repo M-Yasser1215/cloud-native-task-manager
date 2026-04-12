@@ -182,7 +182,7 @@ Navigating directly to `/login` or `/register` returned a 404 because Vercel tri
 
 ## 💭 Future Improvements
 
-- **Mobile responsiveness** - the app is currently designed for desktop browsers only. A full responsive redesign using CSS media queries and a mobile-first layout would make it usable across all screen sizes and devices.
+- ~~**Mobile responsiveness** - the app is currently designed for desktop browsers only. A full responsive redesign using CSS media queries and a mobile-first layout would make it usable across all screen sizes and devices.~~ ✅
 - **Email verification** - send a confirmation code or magic link to the user's email on registration to verify they own the address before activating the account. Could be implemented using SMTP (e.g. Gmail, SendGrid, or Resend).
 - Add due dates to tasks with a date picker and overdue highlighting.
 - Edit task title and description inline without a modal.
