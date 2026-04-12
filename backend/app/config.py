@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
     cors_origins: str = "http://localhost:5173"
-    resend_api_key: str
+    gmail_app_password: str
     frontend_url: str = "http://localhost:5173"
 
     @property

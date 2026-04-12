@@ -1,5 +1,8 @@
 import secrets
-import resend
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -10,31 +13,38 @@ from app.database import get_db
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-resend.api_key = settings.resend_api_key
+GMAIL_SENDER = "mohammed.yasser1216@gmail.com"
 
 
 def send_verification_email(email: str, username: str, token: str):
     verify_url = f"{settings.frontend_url}/verify?token={token}"
-    resend.Emails.send({
-        "from": "Taskr <onboarding@resend.dev>",
-        "to": email,
-        "subject": "Verify your Taskr account",
-        "html": f"""
-        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem; background: #0c0c0e; color: #f0f0f2; border-radius: 12px;">
-            <h1 style="color: #d4f550; font-size: 1.5rem; margin-bottom: 0.5rem;">◈ Taskr</h1>
-            <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Hey {username}, verify your email</h2>
-            <p style="color: #6b6b72; margin-bottom: 1.5rem;">Click the button below to verify your email address and activate your account.</p>
-            <a href="{verify_url}"
-               style="display: inline-block; background: #d4f550; color: #0c0c0e; padding: 0.75rem 1.5rem;
-                      border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
-                Verify my account
-            </a>
-            <p style="color: #6b6b72; font-size: 0.8rem; margin-top: 1.5rem;">
-                If you didn't create a Taskr account, you can safely ignore this email.
-            </p>
-        </div>
-        """
-    })
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "Verify your Taskr account"
+    msg["From"] = f"Taskr <{GMAIL_SENDER}>"
+    msg["To"] = email
+
+    html = f"""
+    <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem; background: #0c0c0e; color: #f0f0f2; border-radius: 12px;">
+        <h1 style="color: #d4f550; font-size: 1.5rem; margin-bottom: 0.5rem;">◈ Taskr</h1>
+        <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">Hey {username}, verify your email</h2>
+        <p style="color: #6b6b72; margin-bottom: 1.5rem;">Click the button below to verify your email address and activate your account.</p>
+        <a href="{verify_url}"
+           style="display: inline-block; background: #d4f550; color: #0c0c0e; padding: 0.75rem 1.5rem;
+                  border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 0.95rem;">
+            Verify my account
+        </a>
+        <p style="color: #6b6b72; font-size: 0.8rem; margin-top: 1.5rem;">
+            If you didn't create a Taskr account, you can safely ignore this email.
+        </p>
+    </div>
+    """
+
+    msg.attach(MIMEText(html, "html"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(GMAIL_SENDER, settings.gmail_app_password)
+        server.sendmail(GMAIL_SENDER, email, msg.as_string())
 
 
 @router.post("/register", response_model=schemas.MessageResponse, status_code=status.HTTP_201_CREATED)
