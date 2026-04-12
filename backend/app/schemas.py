@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 
-# --- Auth schemas -----------------------------------------------
+# ── Auth schemas ──────────────────────────────────────────────────────────────
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -21,6 +21,7 @@ class UserOut(BaseModel):
     id: int
     email: str
     username: str
+    verified: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -32,7 +33,11 @@ class Token(BaseModel):
     user: UserOut
 
 
-# --- Task schemas -----------------------------------------------
+class MessageResponse(BaseModel):
+    message: str
+
+
+# ── Task schemas ──────────────────────────────────────────────────────────────
 
 class TaskCreate(BaseModel):
     title: str

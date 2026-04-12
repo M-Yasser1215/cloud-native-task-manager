@@ -1,32 +1,45 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import api from "../api";
-import { useAuth } from "../AuthContext";
-import type { AuthResponse } from "../types";
 
 export default function Register() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const { data } = await api.post<AuthResponse>("/auth/register", { email, username, password });
-      login(data.access_token, data.user);
-      navigate("/");
+      await api.post("/auth/register", { email, username, password });
+      setSent(true);
     } catch (err: any) {
       setError(err.response?.data?.detail || "Registration failed");
     } finally {
       setLoading(false);
     }
   };
+
+  if (sent) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="logo">◈</div>
+            <h1>Check your email</h1>
+            <p>We sent a verification link to <strong>{email}</strong>. Click it to activate your account.</p>
+          </div>
+          <p className="auth-switch">
+            Already verified? <Link to="/login">Sign in</Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page">

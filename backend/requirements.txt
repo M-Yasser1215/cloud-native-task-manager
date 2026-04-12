@@ -9,3 +9,4 @@ python-dotenv==1.0.1
 pydantic[email]==2.7.1
 pydantic-settings==2.2.1
 alembic==1.13.1
+resend==2.6.0
