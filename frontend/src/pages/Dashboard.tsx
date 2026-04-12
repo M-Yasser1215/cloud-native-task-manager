@@ -13,16 +13,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // New task form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  useEffect(() => { fetchTasks(); }, []);
 
   const fetchTasks = async () => {
     try {
@@ -38,16 +36,9 @@ export default function Dashboard() {
     setSubmitting(true);
     try {
       const { data } = await api.post<Task>("/tasks/", { title, description, priority });
-      setTasks((prev) =>
-        [...prev, data].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
-      );
-      setTitle("");
-      setDescription("");
-      setPriority("medium");
-      setShowForm(false);
-    } finally {
-      setSubmitting(false);
-    }
+      setTasks((prev) => [...prev, data].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]));
+      setTitle(""); setDescription(""); setPriority("medium"); setShowForm(false);
+    } finally { setSubmitting(false); }
   };
 
   const toggleComplete = async (task: Task) => {
@@ -60,9 +51,11 @@ export default function Dashboard() {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
+  const handleLogout = () => { logout(); navigate("/login"); };
+
+  const handleFilterChange = (f: "all" | "active" | "done") => {
+    setFilter(f);
+    setSidebarOpen(false);
   };
 
   const filtered = tasks.filter((t) => {
@@ -79,21 +72,19 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard">
-      {/* Sidebar */}
-      <aside className="sidebar">
+      {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-logo">◈ Taskr</div>
         <nav className="sidebar-nav">
-          <button className={filter === "all" ? "nav-item active" : "nav-item"} onClick={() => setFilter("all")}>
-            <span className="nav-icon">▦</span> All tasks
-            <span className="nav-count">{stats.total}</span>
+          <button className={filter === "all" ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("all")}>
+            <span className="nav-icon">▦</span> All tasks <span className="nav-count">{stats.total}</span>
           </button>
-          <button className={filter === "active" ? "nav-item active" : "nav-item"} onClick={() => setFilter("active")}>
-            <span className="nav-icon">◎</span> Active
-            <span className="nav-count">{stats.total - stats.done}</span>
+          <button className={filter === "active" ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("active")}>
+            <span className="nav-icon">◎</span> Active <span className="nav-count">{stats.total - stats.done}</span>
           </button>
-          <button className={filter === "done" ? "nav-item active" : "nav-item"} onClick={() => setFilter("done")}>
-            <span className="nav-icon">✓</span> Completed
-            <span className="nav-count">{stats.done}</span>
+          <button className={filter === "done" ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("done")}>
+            <span className="nav-icon">✓</span> Completed <span className="nav-count">{stats.done}</span>
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -105,19 +96,20 @@ export default function Dashboard() {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="main">
         <header className="main-header">
-          <div>
-            <h1>{filter === "all" ? "All Tasks" : filter === "active" ? "Active" : "Completed"}</h1>
-            {stats.high > 0 && (
-              <p className="header-sub">{stats.high} high priority task{stats.high > 1 ? "s" : ""} need attention</p>
-            )}
+          <div className="main-header-left">
+            <button className="hamburger" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
+              <span /><span /><span />
+            </button>
+            <div>
+              <h1>{filter === "all" ? "All Tasks" : filter === "active" ? "Active" : "Completed"}</h1>
+              {stats.high > 0 && <p className="header-sub">{stats.high} high priority task{stats.high > 1 ? "s" : ""} need attention</p>}
+            </div>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ New task</button>
         </header>
 
-        {/* Stats bar */}
         <div className="stats-bar">
           <div className="stat">
             <span className="stat-value">{stats.total}</span>
@@ -132,14 +124,10 @@ export default function Dashboard() {
             <span className="stat-label">Complete</span>
           </div>
           <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${stats.total > 0 ? (stats.done / stats.total) * 100 : 0}%` }}
-            />
+            <div className="progress-fill" style={{ width: `${stats.total > 0 ? (stats.done / stats.total) * 100 : 0}%` }} />
           </div>
         </div>
 
-        {/* New task form */}
         {showForm && (
           <div className="form-overlay" onClick={() => setShowForm(false)}>
             <div className="task-form-card" onClick={(e) => e.stopPropagation()}>
@@ -147,51 +135,29 @@ export default function Dashboard() {
               <form onSubmit={createTask}>
                 <div className="field">
                   <label>Title</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="What needs to be done?"
-                    required
-                    autoFocus
-                  />
+                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to be done?" required autoFocus />
                 </div>
                 <div className="field">
                   <label>Description <span className="optional">(optional)</span></label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Add more details..."
-                    rows={3}
-                  />
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add more details..." rows={3} />
                 </div>
                 <div className="field">
                   <label>Priority</label>
                   <div className="priority-picker">
                     {(["low", "medium", "high"] as const).map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        className={`priority-btn priority-${p} ${priority === p ? "selected" : ""}`}
-                        onClick={() => setPriority(p)}
-                      >
-                        {p}
-                      </button>
+                      <button key={p} type="button" className={`priority-btn priority-${p} ${priority === p ? "selected" : ""}`} onClick={() => setPriority(p)}>{p}</button>
                     ))}
                   </div>
                 </div>
                 <div className="form-actions">
                   <button type="button" className="btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
-                  <button type="submit" className="btn-primary" disabled={submitting}>
-                    {submitting ? "Adding..." : "Add task"}
-                  </button>
+                  <button type="submit" className="btn-primary" disabled={submitting}>{submitting ? "Adding..." : "Add task"}</button>
                 </div>
               </form>
             </div>
           </div>
         )}
 
-        {/* Task list */}
         {loading ? (
           <div className="empty-state">Loading...</div>
         ) : filtered.length === 0 ? (
@@ -203,9 +169,7 @@ export default function Dashboard() {
           <ul className="task-list">
             {filtered.map((task) => (
               <li key={task.id} className={`task-item ${task.completed ? "completed" : ""}`}>
-                <button className="task-check" onClick={() => toggleComplete(task)}>
-                  {task.completed ? "✓" : ""}
-                </button>
+                <button className="task-check" onClick={() => toggleComplete(task)}>{task.completed ? "✓" : ""}</button>
                 <div className="task-body">
                   <div className="task-top">
                     <span className="task-title">{task.title}</span>

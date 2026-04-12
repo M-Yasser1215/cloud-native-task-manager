@@ -180,3 +180,152 @@ input, textarea, button, select { font-family: inherit; }
 
 .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
 .empty-icon { font-size: 2rem; color: var(--border); }
+
+/* ── Mobile hamburger button ────────────────────────────────────────────────── */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+
+.hamburger:hover span { background: var(--accent); }
+
+.main-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ── Sidebar overlay (mobile) ───────────────────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 40;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Responsive breakpoints ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Auth pages */
+  .auth-card {
+    margin: 1rem;
+    padding: 1.75rem 1.25rem;
+    border-radius: 12px;
+  }
+
+  /* Dashboard layout — stack vertically */
+  .dashboard {
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sidebar slides in from left */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    width: 260px;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  /* Main content takes full width */
+  .main {
+    padding: 1.25rem 1rem;
+    gap: 1rem;
+    overflow-y: auto;
+    height: 100vh;
+  }
+
+  /* Show hamburger on mobile */
+  .hamburger {
+    display: flex;
+  }
+
+  /* Header */
+  .main-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .btn-primary {
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+
+  /* Stats bar — wrap on small screens */
+  .stats-bar {
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .progress-bar {
+    width: 100%;
+    flex: unset;
+  }
+
+  /* Task form modal */
+  .task-form-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .form-actions .btn-primary,
+  .form-actions .btn-ghost {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 400px) {
+  .main-header {
+    gap: 0.5rem;
+  }
+
+  .main-header h1 {
+    font-size: 1.1rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .task-item {
+    padding: 0.875rem 1rem;
+  }
+}
