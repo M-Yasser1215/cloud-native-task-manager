@@ -30,11 +30,18 @@ export default function Register() {
         <div className="auth-card">
           <div className="auth-header">
             <div className="logo">◈</div>
-            <h1>Check your email</h1>
-            <p>We sent a verification link to <strong>{email}</strong>. Click it to activate your account.</p>
+            <h1>Account created!</h1>
+            <p>
+              In a production app you'd receive a verification email at{" "}
+              <strong>{email}</strong>. This is a portfolio project so email
+              sending isn't set up — you can go ahead and log in directly.
+            </p>
           </div>
-          <p className="auth-switch">
-            Already verified? <Link to="/login">Sign in</Link>
+          <Link to="/login" className="btn-primary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>
+            Go to login
+          </Link>
+          <p className="auth-switch" style={{ marginTop: "1rem" }}>
+            Want to register another account? <Link to="/register" onClick={() => { setSent(false); setEmail(""); setUsername(""); setPassword(""); }}>Start over</Link>
           </p>
         </div>
       </div>
