@@ -31,7 +31,7 @@ export default function Login() {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="logo">✦</div>
+          <div className="logo">◈</div>
           <h1>Welcome back</h1>
           <p>Sign in to your workspace</p>
         </div>
