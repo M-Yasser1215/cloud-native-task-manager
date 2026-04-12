@@ -34,7 +34,7 @@ export default function Register() {
             <p>
               In a production app you'd receive a verification email at{" "}
               <strong>{email}</strong>. This is a portfolio project so email
-              sending isn't set up — you can go ahead and log in directly.
+              sending isn't set up - you can go ahead and log in directly.
             </p>
           </div>
           <Link to="/login" className="btn-primary" style={{ textAlign: "center", textDecoration: "none", display: "block" }}>

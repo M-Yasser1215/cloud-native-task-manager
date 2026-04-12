@@ -162,7 +162,7 @@ export default function Dashboard() {
           <div className="empty-state">Loading...</div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">✦</div>
+            <div className="empty-icon">◈</div>
             <p>{filter === "done" ? "No completed tasks yet" : "No tasks yet — add one!"}</p>
           </div>
         ) : (
