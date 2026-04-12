@@ -43,7 +43,9 @@ def send_verification_email(email: str, username: str, token: str):
     msg.attach(MIMEText(html, "html"))
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.ehlo()
+            server.starttls()
             server.login(GMAIL_SENDER, settings.gmail_app_password)
             server.sendmail(GMAIL_SENDER, email, msg.as_string())
     except Exception as e:
