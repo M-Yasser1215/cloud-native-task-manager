@@ -1,8 +1,8 @@
-# 🗂️ Cloud Native Task Manager
+# Cloud Native Task Manager
 
 A full-stack task management app deployed to the cloud with a real backend, database, and JWT authentication. Built as a portfolio project to demonstrate end-to-end system design and cloud deployment.
 
-🔗 **Live Demo:** [cloud-native-task-manager.vercel.app](https://cloud-native-task-manager.vercel.app)
+**Live Demo:** [cloud-native-task-manager.vercel.app](https://cloud-native-task-manager.vercel.app)
 
 ---
 
@@ -13,12 +13,14 @@ A full-stack task management app deployed to the cloud with a real backend, data
 - Vite
 - React Router
 - Axios
+- Cypress (E2E testing)
 
 **Backend**
 - Python + FastAPI
 - SQLAlchemy ORM
 - Pydantic (validation)
-- JWT (python-jose + passlib)
+- JWT access + refresh tokens (python-jose + passlib)
+- SlowAPI (rate limiting)
 
 **Database**
 - PostgreSQL (hosted on Neon)
@@ -35,26 +37,36 @@ A full-stack task management app deployed to the cloud with a real backend, data
 **Authentication**
 - Register and login with email + password
 - Passwords hashed with bcrypt
-- JWT tokens stored in localStorage and attached to every API request
+- JWT access tokens (60 min) + refresh tokens (30 days)
+- Silent token refresh via Axios interceptor
+- Rate limiting on auth endpoints (10 requests/minute)
 - Protected routes - unauthenticated users are redirected to login
 
 **Task Management**
-- Create tasks with a title, optional description, and priority (low / medium / high)
+- Create tasks with title, description, priority, due date, and tags
 - Mark tasks as complete or incomplete
 - Delete tasks
-- Filter tasks by All, Active, or Completed
+- Edit task title and description inline without a modal
+- Filter by All, Active, or Completed
+- Filter by tag via the sidebar
+- Real-time search by title, description, or tag
 - Tasks sorted by priority automatically
+- Overdue highlighting for tasks past their due date
 
 **Dashboard**
-- Live stats bar showing total tasks, completed count, and percentage
+- Live stats bar showing total, completed, overdue count, and percentage
 - Animated progress bar
 - Modal form for creating new tasks
-- Sidebar navigation with per-filter counts
+- Sidebar navigation with per-filter counts and tag list
 
-**Responsive Design**
- - Mobile-first layout with CSS media queries
- - Slide-out sidebar with hamburger menu on mobile
- - Fully usable across desktop, tablet, and mobile
+**UI**
+- Dark mode by default with light mode toggle
+- Theme preference saved to localStorage
+- Custom SVG favicon and tab title
+- Mobile-first responsive layout with slide-out sidebar
+
+**Testing**
+- E2E tests with Cypress covering auth flow and full task CRUD
 
 ---
 
@@ -71,8 +83,17 @@ cloud-native-task-manager/
 │   │   │   └── Verify.tsx
 │   │   ├── App.tsx         ← Routing
 │   │   ├── AuthContext.tsx ← Global auth state
-│   │   ├── api.ts          ← Axios client with JWT interceptors
+│   │   ├── api.ts          ← Axios client with JWT + refresh interceptors
 │   │   └── types.ts        ← TypeScript interfaces
+│   ├── cypress/
+│   │   ├── e2e/
+│   │   │   ├── auth.cy.ts  ← Auth flow tests
+│   │   │   └── tasks.cy.ts ← Task CRUD tests
+│   │   ├── support/
+│   │   │   ├── commands.ts ← Custom cy.login() command
+│   │   │   └── e2e.ts      ← Global support file
+│   │   └── fixtures/
+│   │       └── user.json   ← Test user credentials
 │   ├── public/
 │   │   └── favicon.svg     ← Custom SVG favicon
 │   └── vercel.json         ← Client-side routing fix
@@ -80,18 +101,17 @@ cloud-native-task-manager/
 └── backend/                ← FastAPI (Python)
     ├── app/
     │   ├── routers/
-    │   │   ├── auth.py     ← POST /auth/register, POST /auth/login
+    │   │   ├── auth.py     ← POST /auth/register, /login, /refresh
     │   │   └── tasks.py    ← GET/POST/PUT/DELETE /tasks
     │   ├── models.py       ← SQLAlchemy ORM (User, Task)
     │   ├── schemas.py      ← Pydantic request/response models
     │   ├── auth.py         ← JWT + password utilities
     │   ├── database.py     ← DB engine + session
     │   ├── config.py       ← Environment variable config
-    │   └── main.py         ← App entry point + CORS
+    │   └── main.py         ← App entry point, CORS, rate limiter
     ├── requirements.txt
     └── Procfile
 ```
-
 
 ---
 
@@ -102,7 +122,7 @@ cloud-native-task-manager/
 **Backend**
 ```bash
 cd backend
-cp .env.example .env       # fill in DATABASE_URL and JWT_SECRET
+copy .env.example .env     # fill in DATABASE_URL and JWT_SECRET
 pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
@@ -117,6 +137,13 @@ npm run dev
 ```
 
 App runs at `http://localhost:5173`
+
+**Cypress tests**
+```bash
+cd frontend
+npm run cy:open   # interactive UI
+npm run cy:run    # headless
+```
 
 **Environment Variables**
 
@@ -153,12 +180,27 @@ VITE_API_URL=http://localhost:8000
 
 I started by designing the database schema - a `users` table and a `tasks` table with a foreign key relationship. From there I built the FastAPI backend, wiring up SQLAlchemy models, Pydantic schemas for validation, and JWT auth from scratch using `python-jose` and `passlib`.
 
-Once the backend was running locally and tested via the auto-generated Swagger docs, I moved to the frontend. I scaffolded the React app with Vite and TypeScript, built the auth flow (register → login → protected dashboard), and set up an Axios client with request interceptors to attach the JWT token automatically.
+Once the backend was running locally and tested via the auto-generated Swagger docs, I moved to the frontend. I scaffolded the React app with Vite and TypeScript, built the auth flow (register → login → protected dashboard), and set up an Axios client with request interceptors to attach the JWT token automatically and silently refresh it using a refresh token when it expires.
 
 With both ends talking to each other locally, I deployed the database to Neon, the backend to Render, and the frontend to Vercel. This involved configuring environment variables across three separate platforms and debugging CORS, routing, and Python version issues in production.
 
-After the core app was live, I added mobile responsiveness with a slide-out sidebar and CSS media query breakpoints, a custom SVG favicon and tab title, and a registration flow with an email verification page.
+After the core app was live, I extended it significantly: adding due dates with overdue highlighting, inline task editing, custom tags with sidebar filtering, real-time search, rate limiting on auth endpoints, a light/dark mode toggle with localStorage persistence, mobile responsiveness, and a full Cypress E2E test suite covering the auth flow and task CRUD.
 
+---
+
+## ✅ Completed Improvements
+
+- Mobile responsiveness with slide-out sidebar and CSS media queries
+- Email verification page (delivery blocked by hosting limitations - see Future Improvements)
+- Due dates with date picker and overdue highlighting
+- Inline editing for task title and description
+- Task tags with sidebar filtering
+- Rate limiting on auth endpoints
+- Refresh token flow with silent background renewal
+- Cypress E2E tests for auth flow and task CRUD
+- Custom favicon and tab title
+- Real-time search bar
+- Light/dark mode toggle with localStorage persistence
 
 ---
 
@@ -172,6 +214,9 @@ The `TaskUpdate` Pydantic schema had `completed: Optional[str]` instead of `Opti
 
 **SQLAlchemy circular import**
 Using `from app import models` in the routers caused a circular import that silently broke the `Task` class at import time, resulting in an `AttributeError`. Fixed by switching to direct imports: `from app.models import User, Task`.
+
+**`get_db` swallowing exceptions**
+The `get_db` dependency used a bare `except` block that swallowed all exceptions, causing FastAPI to return a 500 with no meaningful error. This made debugging nearly impossible as the real error was never surfaced. Fixed by replacing `except: db.close()` with `finally: db.close()`.
 
 **Node.js too old for Vite**
 `npm create vite@latest` failed with a `SyntaxError` about `styleText` not being exported from `node:util`. The installed Node.js version was v21.5.0 - below the required `>=22.12.0`. Fixed by upgrading Node.js to the latest LTS.
@@ -192,25 +237,27 @@ The frontend on Vercel was blocked by CORS because the `CORS_ORIGINS` environmen
 Navigating directly to `/login` or `/register` returned a 404 because Vercel tried to find those as static files. Fixed by adding a `vercel.json` rewrite rule to serve `index.html` for all routes, letting React Router handle navigation client-side.
 
 **New database columns not picked up on deploy**
-After adding `verified` and `verification_token` columns to the `User` model, existing users had `NULL` values and new registrations failed. SQLAlchemy only creates tables from scratch - it doesn't migrate existing ones. Fixed by running `ALTER TABLE` statements manually in Neon's SQL Editor.
+After adding `verified`, `verification_token`, `due_date`, and `tags` columns to the models, existing rows had `NULL` values and requests failed. SQLAlchemy only creates tables from scratch - it doesn't migrate existing ones. Fixed by running `ALTER TABLE` statements manually in Neon's SQL Editor.
 
 **Render blocking outbound SMTP**
-After implementing email verification using Gmail SMTP, the registration endpoint hung indefinitely with no response. Render's free tier blocks outbound connections on both port 465 and 587. Attempted workaround with Resend (HTTPS-based) was limited by free tier restrictions. Resolved by removing live email sending and replacing it with a registration confirmation page that explains the limitation - email verification is documented as a future improvement.
+After implementing email verification using Gmail SMTP, the registration endpoint hung indefinitely with no response. Render's free tier blocks outbound connections on both port 465 and 587. Attempted workaround with Resend (HTTPS-based) was limited by free tier restrictions. Resolved by removing live email sending and replacing it with a registration confirmation page that explains the limitation.
 
+**Cypress tests hitting rate limits**
+Running the full Cypress task test suite caused repeated logins which triggered the 10/minute rate limit on `/auth/login`, failing tests with 429 errors. Fixed by using `cy.session` to cache the login state across tests, so the login endpoint is only called once per suite rather than before every individual test.
+
+**Cypress clearing auth state between tests**
+A global `beforeEach(() => cy.clearLocalStorage())` in `cypress/support/e2e.ts` was wiping the JWT token after every test, causing every subsequent test to redirect to the login page. Fixed by moving the `clearLocalStorage` call into the auth test suite only, leaving task tests unaffected.
 
 ---
 
+
+
 ## 💭 Future Improvements
 
-- **Mobile responsiveness** - the app is currently designed for desktop browsers only. A full responsive redesign using CSS media queries and a mobile-first layout would make it usable across all screen sizes and devices. ✅
-- **Email verification** - send a confirmation code or magic link to the user's email on registration to verify they own the address before activating the account. Could be implemented using SMTP (e.g. Gmail, SendGrid, or Resend). ❌ 
-> **Note:** Email verification was attempted during development. Gmail SMTP was blocked by Render's free tier, and Resend's free tier restricted sending to verified addresses only. The registration flow and verification page exist in the codebase - only the actual email delivery is missing. Fully implementable on a paid hosting plan or with a custom domain on Resend.
-- Add due dates to tasks with a date picker and overdue highlighting. ✅
-- Edit task title and description inline without a modal. ✅
-- Add task categories or tags for better organisation. ✅
-- Rate limiting on auth endpoints to prevent brute force attacks.
-- Refresh token flow so users aren't logged out after JWT expiry.
-- End-to-end tests with Cypress covering the auth flow and task CRUD.
-- Change Favicon and Tab name to match the app. ✅
-- Add Search bar to search for task titles, descriptions, or tags. ✅
-- Add Light/Dark mode toggle and the preference persists. ✅
+- **Email verification** - send a confirmation code or magic link to the user's email on registration. 
+>Attempted during development but blocked by Render's free tier restricting outbound SMTP. The registration flow and verification page exist in the codebase - only the actual email delivery is missing. Fully implementable on a paid hosting plan or with a custom domain on Resend.
+- Add drag-to-reorder tasks.
+- Edit task due date and tags inline without reopening the create form.
+- Add task completion statistics over time with a chart.
+- Refresh token rotation - invalidate old refresh tokens on use for extra security.
+- Expand Cypress test coverage to include tag filtering, search, and inline editing.
