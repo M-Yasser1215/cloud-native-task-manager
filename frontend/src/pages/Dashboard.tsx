@@ -210,13 +210,13 @@ export default function Dashboard() {
           )}
         </nav>
         <div className="sidebar-footer">
-          <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-            {theme === "dark" ? "☀ Light mode" : "☾ Dark mode"}
-          </button>
           <div className="user-info">
             <div className="user-avatar">{user?.username[0].toUpperCase()}</div>
             <span>{user?.username}</span>
           </div>
+          <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            {theme === "dark" ? "☀ Light mode" : "☾ Dark mode"}
+          </button>
           <button className="logout-btn" onClick={handleLogout}>Sign out</button>
         </div>
       </aside>
