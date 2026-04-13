@@ -103,6 +103,7 @@ export default function Dashboard() {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [theme, setTheme] = useState<"dark" | "light">(() => (localStorage.getItem("theme") as "dark" | "light") || "dark");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -119,6 +120,11 @@ export default function Dashboard() {
       setTasks(data.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]));
     } finally { setLoading(false); }
   };
+
+  useEffect(() => {
+  document.body.classList.toggle("light", theme === "light");
+  localStorage.setItem("theme", theme);
+}, [theme]);
 
   const createTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -204,6 +210,9 @@ export default function Dashboard() {
           )}
         </nav>
         <div className="sidebar-footer">
+          <button className="theme-toggle" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+            {theme === "dark" ? "☀ Light mode" : "☾ Dark mode"}
+          </button>
           <div className="user-info">
             <div className="user-avatar">{user?.username[0].toUpperCase()}</div>
             <span>{user?.username}</span>
