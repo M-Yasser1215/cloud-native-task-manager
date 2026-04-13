@@ -363,3 +363,43 @@ input, textarea, button, select { font-family: inherit; }
 .field input[type="date"] {
   color-scheme: dark;
 }
+
+/* ── Inline editing ──────────────────────────────────────────────────────────── */
+.inline-edit-trigger {
+  cursor: text;
+  border-radius: 4px;
+  transition: background 0.15s;
+  padding: 1px 3px;
+  margin: -1px -3px;
+}
+ 
+.inline-edit-trigger:hover {
+  background: var(--bg3);
+}
+ 
+.inline-edit-placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.825rem;
+}
+ 
+.inline-edit-input {
+  background: var(--bg3);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+}
+ 
+.inline-edit-textarea {
+  font-size: 0.825rem;
+  font-weight: 400;
+  resize: none;
+  line-height: 1.5;
+}
+ 

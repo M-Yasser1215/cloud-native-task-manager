@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../AuthContext";
@@ -18,13 +18,69 @@ function formatDueDate(due_date: string): string {
   today.setHours(0, 0, 0, 0);
   const due = new Date(due_date);
   const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
   if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
   if (diffDays === 0) return "Due today";
   if (diffDays === 1) return "Due tomorrow";
   return `Due ${due.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
 }
 
+// ── Inline editable field ─────────────────────────────────────────────────────
+function InlineEdit({
+  value,
+  onSave,
+  multiline = false,
+  className = "",
+  placeholder = "",
+}: {
+  value: string;
+  onSave: (val: string) => void;
+  multiline?: boolean;
+  className?: string;
+  placeholder?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editing) ref.current?.focus();
+  }, [editing]);
+
+  const commit = () => {
+    setEditing(false);
+    if (draft.trim() !== value) onSave(draft.trim());
+  };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !multiline) { e.preventDefault(); commit(); }
+    if (e.key === "Escape") { setDraft(value); setEditing(false); }
+  };
+
+  if (!editing) {
+    return (
+      <span
+        className={`${className} inline-edit-trigger`}
+        onClick={() => { setDraft(value); setEditing(true); }}
+        title="Click to edit"
+      >
+        {value || <span className="inline-edit-placeholder">{placeholder}</span>}
+      </span>
+    );
+  }
+
+  const props = {
+    ref,
+    value: draft,
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
+    onBlur: commit,
+    onKeyDown: handleKey,
+    className: `inline-edit-input ${multiline ? "inline-edit-textarea" : ""}`,
+  };
+
+  return multiline ? <textarea {...props} rows={2} /> : <input {...props} type="text" />;
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -55,24 +111,19 @@ export default function Dashboard() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { data } = await api.post<Task>("/tasks/", {
-        title,
-        description,
-        priority,
-        due_date: dueDate || null,
-      });
+      const { data } = await api.post<Task>("/tasks/", { title, description, priority, due_date: dueDate || null });
       setTasks((prev) => [...prev, data].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]));
       setTitle(""); setDescription(""); setPriority("medium"); setDueDate("");
       setShowForm(false);
-    } finally {
-      setSubmitting(false);
-    }
+    } finally { setSubmitting(false); }
   };
 
-  const toggleComplete = async (task: Task) => {
-    const { data } = await api.put<Task>(`/tasks/${task.id}`, { completed: !task.completed });
+  const updateTask = async (task: Task, changes: Partial<Task>) => {
+    const { data } = await api.put<Task>(`/tasks/${task.id}`, changes);
     setTasks((prev) => prev.map((t) => (t.id === task.id ? data : t)));
   };
+
+  const toggleComplete = (task: Task) => updateTask(task, { completed: !task.completed });
 
   const deleteTask = async (id: number) => {
     await api.delete(`/tasks/${id}`);
@@ -80,11 +131,7 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => { logout(); navigate("/login"); };
-
-  const handleFilterChange = (f: "all" | "active" | "done") => {
-    setFilter(f);
-    setSidebarOpen(false);
-  };
+  const handleFilterChange = (f: "all" | "active" | "done") => { setFilter(f); setSidebarOpen(false); };
 
   const filtered = tasks.filter((t) => {
     if (filter === "active") return !t.completed;
@@ -99,7 +146,6 @@ export default function Dashboard() {
     overdue: tasks.filter((t) => isOverdue(t)).length,
   };
 
-  // Today's date in YYYY-MM-DD for min attribute on date input
   const todayStr = new Date().toISOString().split("T")[0];
 
   return (
@@ -136,12 +182,8 @@ export default function Dashboard() {
             </button>
             <div>
               <h1>{filter === "all" ? "All Tasks" : filter === "active" ? "Active" : "Completed"}</h1>
-              {stats.overdue > 0 && (
-                <p className="header-sub overdue-sub">⚠ {stats.overdue} task{stats.overdue > 1 ? "s" : ""} overdue</p>
-              )}
-              {stats.overdue === 0 && stats.high > 0 && (
-                <p className="header-sub">{stats.high} high priority task{stats.high > 1 ? "s" : ""} need attention</p>
-              )}
+              {stats.overdue > 0 && <p className="header-sub overdue-sub">⚠ {stats.overdue} task{stats.overdue > 1 ? "s" : ""} overdue</p>}
+              {stats.overdue === 0 && stats.high > 0 && <p className="header-sub">{stats.high} high priority task{stats.high > 1 ? "s" : ""} need attention</p>}
             </div>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ New task</button>
@@ -186,12 +228,7 @@ export default function Dashboard() {
                 </div>
                 <div className="field">
                   <label>Due date <span className="optional">(optional)</span></label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    min={todayStr}
-                    onChange={(e) => setDueDate(e.target.value)}
-                  />
+                  <input type="date" value={dueDate} min={todayStr} onChange={(e) => setDueDate(e.target.value)} />
                 </div>
                 <div className="field">
                   <label>Priority</label>
@@ -224,10 +261,21 @@ export default function Dashboard() {
                 <button className="task-check" onClick={() => toggleComplete(task)}>{task.completed ? "✓" : ""}</button>
                 <div className="task-body">
                   <div className="task-top">
-                    <span className="task-title">{task.title}</span>
+                    <InlineEdit
+                      value={task.title}
+                      onSave={(val) => val && updateTask(task, { title: val })}
+                      className="task-title"
+                      placeholder="Title"
+                    />
                     <span className={`priority-tag priority-${task.priority}`}>{task.priority}</span>
                   </div>
-                  {task.description && <p className="task-desc">{task.description}</p>}
+                  <InlineEdit
+                    value={task.description || ""}
+                    onSave={(val) => updateTask(task, { description: val })}
+                    multiline
+                    className="task-desc"
+                    placeholder="Add a description..."
+                  />
                   {task.due_date && (
                     <p className={`task-due ${isOverdue(task) ? "task-due-overdue" : ""}`}>
                       {isOverdue(task) ? "⚠ " : "📅 "}{formatDueDate(task.due_date)}
