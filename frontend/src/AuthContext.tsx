@@ -5,8 +5,9 @@ import type { User } from "./types";
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (token: string, user: User) => void;
+  login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
+  updateToken: (token: string, refreshToken: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -18,22 +19,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return stored ? JSON.parse(stored) : null;
   });
 
-  const login = (newToken: string, newUser: User) => {
+  const login = (newToken: string, refreshToken: string, newUser: User) => {
     localStorage.setItem("token", newToken);
+    localStorage.setItem("refresh_token", refreshToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   };
 
+  const updateToken = (newToken: string, refreshToken: string) => {
+    localStorage.setItem("token", newToken);
+    localStorage.setItem("refresh_token", refreshToken);
+    setToken(newToken);
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateToken }}>
       {children}
     </AuthContext.Provider>
   );
