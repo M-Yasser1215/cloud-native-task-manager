@@ -126,7 +126,7 @@ export default function Dashboard() {
     try {
       const { data } = await api.post<Task>("/tasks/", { title, description, priority, due_date: dueDate || null, tags: newTags });
       setTasks((prev) => [...prev, data].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]));
-      setTitle(""); setDescription(""); setPriority("medium"); setDueDate("");
+      setTitle(""); setDescription(""); setPriority("medium"); setDueDate(""); setNewTags([]);
       setShowForm(false);
     } finally { setSubmitting(false); }
   };
