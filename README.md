@@ -205,7 +205,7 @@ After implementing email verification using Gmail SMTP, the registration endpoin
 - **Mobile responsiveness** - the app is currently designed for desktop browsers only. A full responsive redesign using CSS media queries and a mobile-first layout would make it usable across all screen sizes and devices. ✅
 - **Email verification** - send a confirmation code or magic link to the user's email on registration to verify they own the address before activating the account. Could be implemented using SMTP (e.g. Gmail, SendGrid, or Resend). ❌ 
 > **Note:** Email verification was attempted during development. Gmail SMTP was blocked by Render's free tier, and Resend's free tier restricted sending to verified addresses only. The registration flow and verification page exist in the codebase - only the actual email delivery is missing. Fully implementable on a paid hosting plan or with a custom domain on Resend.
-- Add due dates to tasks with a date picker and overdue highlighting.
+- Add due dates to tasks with a date picker and overdue highlighting. ✅
 - Edit task title and description inline without a modal.
 - Add task categories or tags for better organisation.
 - Rate limiting on auth endpoints to prevent brute force attacks.
