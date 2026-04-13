@@ -24,7 +24,7 @@ export default function Verify() {
     api
       .get<AuthResponse>(`/auth/verify?token=${token}`)
       .then(({ data }) => {
-        login(data.access_token, data.user);
+        login(data.access_token, data.refresh_token, data.user);
         setStatus("success");
         setTimeout(() => navigate("/"), 2000);
       })
