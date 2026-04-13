@@ -488,3 +488,54 @@ input, textarea, button, select { font-family: inherit; }
 }
  
 .tag-input-field::placeholder { color: var(--text-muted); }
+
+/* ── Search bar ──────────────────────────────────────────────────────────────── */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  transition: border-color 0.2s;
+}
+ 
+.search-bar:focus-within {
+  border-color: var(--accent);
+}
+ 
+.search-icon {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+ 
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+ 
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+ 
+.search-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+ 
+.search-clear:hover {
+  color: var(--text);
+}

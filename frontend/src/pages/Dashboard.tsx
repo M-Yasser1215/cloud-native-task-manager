@@ -102,6 +102,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -143,15 +144,21 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => { logout(); navigate("/login"); };
-  const handleFilterChange = (f: "all" | "active" | "done") => { setFilter(f); setSidebarOpen(false); };
+  const handleFilterChange = (f: "all" | "active" | "done") => { setFilter(f); setActiveTag(null); setSearch(""); setSidebarOpen(false); };
 
   // All unique tags across all tasks
   const allTags = Array.from(new Set(tasks.flatMap((t) => t.tags || []))).sort()
 
   const filtered = tasks.filter((t) => {
-    if (filter === "active") return !t.completed;
-    if (filter === "done") return t.completed;
-    return true;
+    const matchesFilter = filter === "active" ? !t.completed : filter === "done" ? t.completed : true;
+    const matchesTag = activeTag ? (t.tags || []).includes(activeTag) : true;
+    const q = search.toLowerCase();
+    const matchesSearch = q
+      ? t.title.toLowerCase().includes(q) ||
+        (t.description || "").toLowerCase().includes(q) ||
+        (t.tags || []).some((tag) => tag.includes(q))
+      : true;
+    return matchesFilter && matchesTag && matchesSearch;
   });
 
   const stats = {
@@ -170,13 +177,13 @@ export default function Dashboard() {
       <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-logo">◈ Taskr</div>
         <nav className="sidebar-nav">
-          <button className={filter === "all" ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("all")}>
+          <button className={filter === "all" && !activeTag && !search ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("all")}>
             <span className="nav-icon">▦</span> All tasks <span className="nav-count">{stats.total}</span>
           </button>
-          <button className={filter === "active" ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("active")}>
+          <button className={filter === "active" && !activeTag ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("active")}>
             <span className="nav-icon">◎</span> Active <span className="nav-count">{stats.total - stats.done}</span>
           </button>
-          <button className={filter === "done" ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("done")}>
+          <button className={filter === "done" && !activeTag ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("done")}>
             <span className="nav-icon">✓</span> Completed <span className="nav-count">{stats.done}</span>
           </button>
 
@@ -221,6 +228,21 @@ export default function Dashboard() {
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ New task</button>
         </header>
+
+        {/* Search bar */}
+        <div className="search-bar">
+          <span className="search-icon">⌕</span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search tasks by title, description or tag..."
+            className="search-input"
+          />
+          {search && (
+            <button className="search-clear" onClick={() => setSearch("")}>✕</button>
+          )}
+        </div>
 
         <div className="stats-bar">
           <div className="stat">
@@ -289,7 +311,7 @@ export default function Dashboard() {
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">◈</div>
-            <p>{activeTag ? `No tasks tagged #${activeTag}` : filter === "done" ? "No completed tasks yet" : "No tasks yet - add one!"}</p>
+            <p>{search ? `No tasks matching "${search}"` : activeTag ? `No tasks tagged #${activeTag}` : filter === "done" ? "No completed tasks yet" : "No tasks yet - add one!"}</p>
           </div>
         ) : (
           <ul className="task-list">
