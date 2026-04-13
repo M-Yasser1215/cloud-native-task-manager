@@ -21,7 +21,6 @@ export default function Login() {
       login(data.access_token, data.user);
       navigate("/");
     } catch (err: any) {
-      console.log("Error:", err.response?.data);
       setError(err.response?.data?.detail || "Login failed");
     } finally {
       setLoading(false);
