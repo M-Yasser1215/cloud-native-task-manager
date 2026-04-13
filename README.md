@@ -213,3 +213,4 @@ After implementing email verification using Gmail SMTP, the registration endpoin
 - End-to-end tests with Cypress covering the auth flow and task CRUD.
 - Change Favicon and Tab name to match the app. ✅
 - Add Search bar to search for task titles, descriptions, or tags. ✅
+- Add Light/Dark mode toggle and the preference persists. ✅
