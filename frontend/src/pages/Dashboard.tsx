@@ -6,6 +6,25 @@ import type { Task } from "../types";
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 
+function isOverdue(task: Task): boolean {
+  if (!task.due_date || task.completed) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(task.due_date) < today;
+}
+
+function formatDueDate(due_date: string): string {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(due_date);
+  const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+  if (diffDays === 0) return "Due today";
+  if (diffDays === 1) return "Due tomorrow";
+  return `Due ${due.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
+}
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -18,6 +37,7 @@ export default function Dashboard() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const [dueDate, setDueDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { fetchTasks(); }, []);
@@ -35,10 +55,18 @@ export default function Dashboard() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { data } = await api.post<Task>("/tasks/", { title, description, priority });
+      const { data } = await api.post<Task>("/tasks/", {
+        title,
+        description,
+        priority,
+        due_date: dueDate || null,
+      });
       setTasks((prev) => [...prev, data].sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]));
-      setTitle(""); setDescription(""); setPriority("medium"); setShowForm(false);
-    } finally { setSubmitting(false); }
+      setTitle(""); setDescription(""); setPriority("medium"); setDueDate("");
+      setShowForm(false);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const toggleComplete = async (task: Task) => {
@@ -68,7 +96,11 @@ export default function Dashboard() {
     total: tasks.length,
     done: tasks.filter((t) => t.completed).length,
     high: tasks.filter((t) => t.priority === "high" && !t.completed).length,
+    overdue: tasks.filter((t) => isOverdue(t)).length,
   };
+
+  // Today's date in YYYY-MM-DD for min attribute on date input
+  const todayStr = new Date().toISOString().split("T")[0];
 
   return (
     <div className="dashboard">
@@ -104,7 +136,12 @@ export default function Dashboard() {
             </button>
             <div>
               <h1>{filter === "all" ? "All Tasks" : filter === "active" ? "Active" : "Completed"}</h1>
-              {stats.high > 0 && <p className="header-sub">{stats.high} high priority task{stats.high > 1 ? "s" : ""} need attention</p>}
+              {stats.overdue > 0 && (
+                <p className="header-sub overdue-sub">⚠ {stats.overdue} task{stats.overdue > 1 ? "s" : ""} overdue</p>
+              )}
+              {stats.overdue === 0 && stats.high > 0 && (
+                <p className="header-sub">{stats.high} high priority task{stats.high > 1 ? "s" : ""} need attention</p>
+              )}
             </div>
           </div>
           <button className="btn-primary" onClick={() => setShowForm(true)}>+ New task</button>
@@ -123,6 +160,12 @@ export default function Dashboard() {
             <span className="stat-value">{stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0}%</span>
             <span className="stat-label">Complete</span>
           </div>
+          {stats.overdue > 0 && (
+            <div className="stat">
+              <span className="stat-value overdue-value">{stats.overdue}</span>
+              <span className="stat-label">Overdue</span>
+            </div>
+          )}
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${stats.total > 0 ? (stats.done / stats.total) * 100 : 0}%` }} />
           </div>
@@ -140,6 +183,15 @@ export default function Dashboard() {
                 <div className="field">
                   <label>Description <span className="optional">(optional)</span></label>
                   <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add more details..." rows={3} />
+                </div>
+                <div className="field">
+                  <label>Due date <span className="optional">(optional)</span></label>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    min={todayStr}
+                    onChange={(e) => setDueDate(e.target.value)}
+                  />
                 </div>
                 <div className="field">
                   <label>Priority</label>
@@ -163,12 +215,12 @@ export default function Dashboard() {
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">◈</div>
-            <p>{filter === "done" ? "No completed tasks yet" : "No tasks yet — add one!"}</p>
+            <p>{filter === "done" ? "No completed tasks yet" : "No tasks yet - add one!"}</p>
           </div>
         ) : (
           <ul className="task-list">
             {filtered.map((task) => (
-              <li key={task.id} className={`task-item ${task.completed ? "completed" : ""}`}>
+              <li key={task.id} className={`task-item ${task.completed ? "completed" : ""} ${isOverdue(task) ? "overdue" : ""}`}>
                 <button className="task-check" onClick={() => toggleComplete(task)}>{task.completed ? "✓" : ""}</button>
                 <div className="task-body">
                   <div className="task-top">
@@ -176,6 +228,11 @@ export default function Dashboard() {
                     <span className={`priority-tag priority-${task.priority}`}>{task.priority}</span>
                   </div>
                   {task.description && <p className="task-desc">{task.description}</p>}
+                  {task.due_date && (
+                    <p className={`task-due ${isOverdue(task) ? "task-due-overdue" : ""}`}>
+                      {isOverdue(task) ? "⚠ " : "📅 "}{formatDueDate(task.due_date)}
+                    </p>
+                  )}
                 </div>
                 <button className="task-delete" onClick={() => deleteTask(task.id)}>✕</button>
               </li>

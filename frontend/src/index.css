@@ -329,3 +329,37 @@ input, textarea, button, select { font-family: inherit; }
     padding: 0.875rem 1rem;
   }
 }
+
+/* ── Due dates & overdue ────────────────────────────────────────────────────── */
+.task-due {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-family: 'DM Mono', monospace;
+}
+ 
+.task-due-overdue {
+  color: var(--red);
+}
+ 
+.task-item.overdue {
+  border-color: rgba(255, 92, 92, 0.3);
+  background: rgba(255, 92, 92, 0.04);
+}
+ 
+.task-item.overdue .task-check {
+  border-color: rgba(255, 92, 92, 0.4);
+}
+ 
+.overdue-value {
+  color: var(--red) !important;
+}
+ 
+.overdue-sub {
+  color: var(--red) !important;
+}
+ 
+/* Date input styling */
+.field input[type="date"] {
+  color-scheme: dark;
+}

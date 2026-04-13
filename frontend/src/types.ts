@@ -11,6 +11,7 @@ export interface Task {
   description: string | null;
   completed: boolean;
   priority: "low" | "medium" | "high";
+  due_date: string | null;
   created_at: string;
   updated_at: string;
   owner_id: number;
