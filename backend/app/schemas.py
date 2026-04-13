@@ -1,7 +1,7 @@
 from datetime import datetime, date
-from typing import Optional
+from typing import Optional, List
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 # ── Auth schemas ──────────────────────────────────────────────────────────────
@@ -44,6 +44,14 @@ class TaskCreate(BaseModel):
     description: Optional[str] = None
     priority: Optional[str] = "medium"
     due_date: Optional[date] = None
+    tags: Optional[List[str]] = []
+ 
+    @field_validator("tags", mode="before")
+    @classmethod
+    def parse_tags(cls, v):
+        if isinstance(v, str):
+            return [t.strip() for t in v.split(",") if t.strip()]
+        return v or []
 
 
 class TaskUpdate(BaseModel):
@@ -52,6 +60,14 @@ class TaskUpdate(BaseModel):
     completed: Optional[bool] = None
     priority: Optional[str] = None
     due_date: Optional[date] = None
+    tags: Optional[List[str]] = None
+ 
+    @field_validator("tags", mode="before")
+    @classmethod
+    def parse_tags(cls, v):
+        if isinstance(v, str):
+            return [t.strip() for t in v.split(",") if t.strip()]
+        return v
 
 
 class TaskOut(BaseModel):
@@ -61,8 +77,16 @@ class TaskOut(BaseModel):
     completed: bool
     priority: str
     due_date: Optional[date]
+    tags: List[str] = []
     created_at: datetime
     updated_at: datetime
     owner_id: int
 
     model_config = {"from_attributes": True}
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def parse_tags(cls, v):
+        if isinstance(v, str) and v:
+            return [t.strip() for t in v.split(",") if t.strip()]
+        return v or []

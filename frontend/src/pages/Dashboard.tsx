@@ -25,59 +25,71 @@ function formatDueDate(due_date: string): string {
 }
 
 // ── Inline editable field ─────────────────────────────────────────────────────
-function InlineEdit({
-  value,
-  onSave,
-  multiline = false,
-  className = "",
-  placeholder = "",
-}: {
-  value: string;
-  onSave: (val: string) => void;
-  multiline?: boolean;
-  className?: string;
-  placeholder?: string;
+function InlineEdit({ value, onSave, multiline = false, className = "", placeholder = "" }: {
+  value: string; onSave: (val: string) => void; multiline?: boolean; className?: string; placeholder?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
   const ref = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (editing) ref.current?.focus();
-  }, [editing]);
-
+ 
+  useEffect(() => { if (editing) ref.current?.focus(); }, [editing]);
+ 
   const commit = () => {
     setEditing(false);
     if (draft.trim() !== value) onSave(draft.trim());
   };
-
+ 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !multiline) { e.preventDefault(); commit(); }
     if (e.key === "Escape") { setDraft(value); setEditing(false); }
   };
-
+ 
   if (!editing) {
     return (
-      <span
-        className={`${className} inline-edit-trigger`}
-        onClick={() => { setDraft(value); setEditing(true); }}
-        title="Click to edit"
-      >
+      <span className={`${className} inline-edit-trigger`} onClick={() => { setDraft(value); setEditing(true); }} title="Click to edit">
         {value || <span className="inline-edit-placeholder">{placeholder}</span>}
       </span>
     );
   }
-
-  const props = {
-    ref,
-    value: draft,
-    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
-    onBlur: commit,
-    onKeyDown: handleKey,
-    className: `inline-edit-input ${multiline ? "inline-edit-textarea" : ""}`,
-  };
-
+ 
+  const props = { ref, value: draft, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value), onBlur: commit, onKeyDown: handleKey, className: `inline-edit-input ${multiline ? "inline-edit-textarea" : ""}` };
   return multiline ? <textarea {...props} rows={2} /> : <input {...props} type="text" />;
+}
+
+// ── Tag input chip component ───────────────────────────────────────────────────
+function TagInput({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
+  const [input, setInput] = useState("");
+ 
+  const addTag = (raw: string) => {
+    const tag = raw.trim().toLowerCase().replace(/\s+/g, "-");
+    if (tag && !tags.includes(tag)) onChange([...tags, tag]);
+    setInput("");
+  };
+ 
+  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") { e.preventDefault(); addTag(input); }
+    if (e.key === "Backspace" && !input && tags.length) onChange(tags.slice(0, -1));
+  };
+ 
+  return (
+    <div className="tag-input-wrapper">
+      {tags.map((tag) => (
+        <span key={tag} className="tag-chip tag-chip-input">
+          {tag}
+          <button type="button" className="tag-chip-remove" onClick={() => onChange(tags.filter((t) => t !== tag))}>✕</button>
+        </span>
+      ))}
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={handleKey}
+        onBlur={() => input && addTag(input)}
+        placeholder={tags.length === 0 ? "Add tags (press Enter or comma)" : ""}
+        className="tag-input-field"
+      />
+    </div>
+  );
 }
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -88,12 +100,14 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<"all" | "active" | "done">("all");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [dueDate, setDueDate] = useState("");
+  const [newTags, setNewTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => { fetchTasks(); }, []);
@@ -102,9 +116,7 @@ export default function Dashboard() {
     try {
       const { data } = await api.get<Task[]>("/tasks/");
       setTasks(data.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]));
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const createTask = async (e: React.FormEvent) => {
@@ -132,6 +144,9 @@ export default function Dashboard() {
 
   const handleLogout = () => { logout(); navigate("/login"); };
   const handleFilterChange = (f: "all" | "active" | "done") => { setFilter(f); setSidebarOpen(false); };
+
+  // All unique tags across all tasks
+  const allTags = Array.from(new Set(tasks.flatMap((t) => t.tags || []))).sort()
 
   const filtered = tasks.filter((t) => {
     if (filter === "active") return !t.completed;
@@ -164,6 +179,22 @@ export default function Dashboard() {
           <button className={filter === "done" ? "nav-item active" : "nav-item"} onClick={() => handleFilterChange("done")}>
             <span className="nav-icon">✓</span> Completed <span className="nav-count">{stats.done}</span>
           </button>
+
+          {allTags.length > 0 && (
+            <>
+              <div className="sidebar-section-label">Tags</div>
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  className={activeTag === tag ? "nav-item active" : "nav-item"}
+                  onClick={() => { setActiveTag(activeTag === tag ? null : tag); setSidebarOpen(false); }}
+                >
+                  <span className="nav-icon">#</span> {tag}
+                  <span className="nav-count">{tasks.filter((t) => (t.tags || []).includes(tag)).length}</span>
+                </button>
+              ))}
+            </>
+          )}
         </nav>
         <div className="sidebar-footer">
           <div className="user-info">
@@ -181,7 +212,9 @@ export default function Dashboard() {
               <span /><span /><span />
             </button>
             <div>
-              <h1>{filter === "all" ? "All Tasks" : filter === "active" ? "Active" : "Completed"}</h1>
+              <h1>
+                {activeTag ? `#${activeTag}` : filter === "all" ? "All Tasks" : filter === "active" ? "Active" : "Completed"}
+              </h1>
               {stats.overdue > 0 && <p className="header-sub overdue-sub">⚠ {stats.overdue} task{stats.overdue > 1 ? "s" : ""} overdue</p>}
               {stats.overdue === 0 && stats.high > 0 && <p className="header-sub">{stats.high} high priority task{stats.high > 1 ? "s" : ""} need attention</p>}
             </div>
@@ -227,6 +260,10 @@ export default function Dashboard() {
                   <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Add more details..." rows={3} />
                 </div>
                 <div className="field">
+                  <label>Tags <span className="optional">(optional)</span></label>
+                  <TagInput tags={newTags} onChange={setNewTags} />
+                </div>
+                <div className="field">
                   <label>Due date <span className="optional">(optional)</span></label>
                   <input type="date" value={dueDate} min={todayStr} onChange={(e) => setDueDate(e.target.value)} />
                 </div>
@@ -252,7 +289,7 @@ export default function Dashboard() {
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">◈</div>
-            <p>{filter === "done" ? "No completed tasks yet" : "No tasks yet - add one!"}</p>
+            <p>{activeTag ? `No tasks tagged #${activeTag}` : filter === "done" ? "No completed tasks yet" : "No tasks yet - add one!"}</p>
           </div>
         ) : (
           <ul className="task-list">
@@ -276,6 +313,13 @@ export default function Dashboard() {
                     className="task-desc"
                     placeholder="Add a description..."
                   />
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="task-tags">
+                      {task.tags.map((tag) => (
+                        <span key={tag} className="tag-chip" onClick={() => setActiveTag(activeTag === tag ? null : tag)}>#{tag}</span>
+                      ))}
+                    </div>
+                  )}
                   {task.due_date && (
                     <p className={`task-due ${isOverdue(task) ? "task-due-overdue" : ""}`}>
                       {isOverdue(task) ? "⚠ " : "📅 "}{formatDueDate(task.due_date)}

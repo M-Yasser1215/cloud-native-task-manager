@@ -402,4 +402,89 @@ input, textarea, button, select { font-family: inherit; }
   resize: none;
   line-height: 1.5;
 }
+
+/* ── Tags ────────────────────────────────────────────────────────────────────── */
+.sidebar-section-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0.75rem 0.75rem 0.25rem;
+}
  
+.task-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+ 
+.tag-chip {
+  font-size: 0.7rem;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(212, 245, 80, 0.08);
+  color: var(--accent);
+  border: 1px solid rgba(212, 245, 80, 0.2);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+ 
+.tag-chip:hover {
+  background: rgba(212, 245, 80, 0.15);
+  border-color: rgba(212, 245, 80, 0.4);
+}
+ 
+.tag-chip-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: default;
+}
+ 
+.tag-chip-remove {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.6rem;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+ 
+.tag-chip-remove:hover { opacity: 1; }
+ 
+.tag-input-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  min-height: 42px;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+ 
+.tag-input-wrapper:focus-within { border-color: var(--accent); }
+ 
+.tag-input-field {
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: inherit;
+  flex: 1;
+  min-width: 120px;
+}
+ 
+.tag-input-field::placeholder { color: var(--text-muted); }

@@ -33,6 +33,7 @@ class Task(Base):
     completed = Column(Boolean, default=False)
     priority = Column(String, default="medium")  # low | medium | high
     due_date = Column(Date, nullable=True)
+    tags = Column(String, nullable=True)  # comma-separated e.g. "work,urgent"
     created_at = Column(DateTime(timezone=True), default=utcnow)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
